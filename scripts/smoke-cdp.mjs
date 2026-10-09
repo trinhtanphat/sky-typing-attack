@@ -15,7 +15,7 @@ socket.addEventListener("message",event=>{
 });
 function cdp(method,params={}){return new Promise((resolve,reject)=>{const i=++id;waiting.set(i,[resolve,reject]);socket.send(JSON.stringify({id:i,method,params}));});}
 async function evaluate(expression){const r=await cdp("Runtime.evaluate",{expression,returnByValue:true,awaitPromise:true});if(r.exceptionDetails)throw Error(r.exceptionDetails.text+" "+(r.exceptionDetails.exception?.description||""));return r.result.value;}
-await cdp("Runtime.enable");await cdp("Page.enable");
+await cdp("Runtime.enable");await cdp("Page.enable");await cdp("Page.reload",{ignoreCache:true});
 for(let n=0;n<30;n++){if(await evaluate("Boolean(window.__skytypeDebug)"))break;await new Promise(r=>setTimeout(r,100));}
 assert.equal(await evaluate("Boolean(window.__skytypeDebug)"),true,"Game JS loaded");
 assert.equal(await evaluate("document.title"),"SkyType Attack — Đánh máy, bảo vệ bầu trời");
@@ -46,6 +46,9 @@ const mobile=await evaluate(`({innerWidth:innerWidth,scrollWidth:document.docume
 assert.ok(mobile.scrollWidth<=mobile.innerWidth+2,"No horizontal overflow on 390px mobile");
 assert.equal(mobile.input,"block");
 console.log("PASS: mobile layout "+JSON.stringify(mobile));
+const mobilePlay=await evaluate(`(() => {const game=window.__skytypeDebug;game.start();const word=game.state.enemies[0].word;const input=document.querySelector("#mobileInput");input.value=word;input.dispatchEvent(new Event("input",{bubbles:true}));return {score:game.state.score,word,inputCleared:input.value===""};})()`);
+assert.ok(mobilePlay.score>0,"Virtual keyboard input should score");assert.equal(mobilePlay.inputCleared,true);
+console.log("PASS: mobile keyboard gameplay "+JSON.stringify(mobilePlay));
 assert.equal(exceptions.length,0,"No uncaught JS exceptions: "+exceptions.join("; "));
 console.log("PASS: 0 uncaught JavaScript exceptions");
 socket.close();

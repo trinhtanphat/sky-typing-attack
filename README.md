@@ -36,6 +36,8 @@ node --test tests/*.test.mjs
 
 The tests use Node built-in test runner and test pure scoring, word targeting, validation and pacing logic.
 
+Optional browser QA: serve the game on port 8763, start Chrome with a DevTools remote debugging port 9351 and run `node scripts/smoke-cdp.mjs`. This also captures `preview.png` and tests keyboard play, pause/resume, mobile viewport and uncaught exceptions.
+
 ## Host on GitHub Pages
 Repository Settings → Pages → **Deploy from a branch** → `main` → `/(root)`. The deployment is static and also works with the repository subpath. This repository has no GitHub Actions workflow.
 
