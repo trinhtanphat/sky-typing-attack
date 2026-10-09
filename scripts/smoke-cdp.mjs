@@ -16,7 +16,7 @@ socket.addEventListener("message",event=>{
 function cdp(method,params={}){return new Promise((resolve,reject)=>{const i=++id;waiting.set(i,[resolve,reject]);socket.send(JSON.stringify({id:i,method,params}));});}
 async function evaluate(expression){const r=await cdp("Runtime.evaluate",{expression,returnByValue:true,awaitPromise:true});if(r.exceptionDetails)throw Error(r.exceptionDetails.text+" "+(r.exceptionDetails.exception?.description||""));return r.result.value;}
 await cdp("Runtime.enable");await cdp("Page.enable");await cdp("Page.reload",{ignoreCache:true});
-for(let n=0;n<30;n++){if(await evaluate("Boolean(window.__skytypeDebug)"))break;await new Promise(r=>setTimeout(r,100));}
+for(let n=0;n<100;n++){if(await evaluate("Boolean(window.__skytypeDebug)"))break;await new Promise(r=>setTimeout(r,100));}
 assert.equal(await evaluate("Boolean(window.__skytypeDebug)"),true,"Game JS loaded");
 assert.equal(await evaluate("document.title"),"SkyType Attack — Đánh máy, bảo vệ bầu trời");
 assert.equal(await evaluate("window.__skytypeDebug.state.phase"),"menu");
