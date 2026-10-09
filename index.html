@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#0b193a">
+<meta name="description" content="SkyType Attack — game bắn chữ trên bầu trời. Gõ từ nhanh để hạ máy bay, giữ combo và lập kỷ lục!">
+<title>SkyType Attack — Đánh máy, bảo vệ bầu trời</title>
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<div class="page-glow" aria-hidden="true"></div>
+<div class="app-shell">
+<header class="site-header">
+  <a class="brand" href="./" aria-label="SkyType Attack — trang chủ"><span class="brand-icon" aria-hidden="true">✦</span><span>SKY<span class="brand-accent">TYPE</span><small>ATTACK</small></span></a>
+  <div class="header-right"><span class="status-dot"></span><span class="online-label">ARCADE / BROWSER GAME</span><button id="soundBtn" class="icon-button" type="button" aria-pressed="true" title="Bật/tắt âm thanh">♫ <span>Âm thanh: Bật</span></button><a class="github-button" href="https://github.com/trinhtanphat/sky-typing-attack" target="_blank" rel="noopener noreferrer">GitHub ↗</a></div>
+</header>
+<main>
+<section class="intro" aria-labelledby="heading">
+ <div><div class="eyebrow"><span class="eyebrow-line"></span> WORD DEFENSE · SKY ARCADE <span class="sparkle">✧</span></div><h1 id="heading">Đánh chữ. <em>Hạ mục tiêu.</em><br>Bảo vệ bầu trời.</h1><p class="intro-copy">Mỗi từ là một chiếc phi cơ đang tiến đến. Gõ chính xác để khóa mục tiêu, bắn hạ chúng và duy trì chuỗi combo thật dài.</p></div>
+ <div class="high-score-display"><span>KỶ LỤC CÁ NHÂN</span><strong id="headerHighScore">000000</strong><small>BEST SCORE <span class="trophy">✦</span></small></div>
+</section>
+<section class="game-layout" aria-label="Trò chơi">
+ <div class="stage-column">
+   <div class="stage-topline"><div class="stage-title"><span class="stage-led"></span><span>SKYZONE / SECTOR 01</span></div><div class="stage-topright"><span>LIVE SESSION</span><span class="tiny-cross">+</span><span id="runState">SẴN SÀNG</span></div></div>
+   <div class="game-frame" id="gameFrame" tabindex="-1">
+     <canvas id="gameCanvas" width="1100" height="620" aria-label="Bầu trời có máy bay và những từ cần gõ"></canvas>
+     <div class="hud" id="gameHud">
+       <div class="hud-block"><span class="hud-label">ĐIỂM SỐ</span><strong id="score">000000</strong></div>
+       <div class="hud-divider"></div>
+       <div class="hud-block"><span class="hud-label">COMBO</span><strong id="combo">×00</strong></div>
+       <div class="hud-spacer"></div>
+       <div class="hud-block lives-block"><span class="hud-label">SINH MẠNG</span><strong id="lives" aria-label="5 mạng">♥ ♥ ♥ ♥ ♥</strong></div>
+       <button id="pauseBtn" type="button" class="pause-btn" aria-label="Tạm dừng trò chơi">Ⅱ</button>
+     </div>
+     <div id="wordProgress" class="word-progress" aria-live="off"><span>ĐANG KHÓA</span><strong id="activeWord">—</strong></div>
+     <div class="overlay" id="overlay">
+       <div class="overlay-vignette"></div>
+       <div class="overlay-card">
+         <div class="overlay-symbol">✦ <span>✈</span> ✦</div>
+         <div class="overlay-kicker" id="overlayKicker">SẴN SÀNG CẤT CÁNH?</div>
+         <h2 id="overlayTitle">Bầu trời đang chờ bạn.</h2>
+         <p id="overlayText">Gõ chữ cái trên bàn phím để khóa và phá hủy phi cơ địch trước khi chúng lọt qua phòng tuyến.</p>
+         <div class="difficulty-row"><label for="difficulty">CẤP ĐỘ</label><select id="difficulty"><option value="easy">Tân binh · Dễ</option><option value="normal" selected>Phi công · Vừa</option><option value="hard">Át chủ bài · Khó</option></select></div>
+         <button id="startBtn" type="button" class="start-button">BẮT ĐẦU CHƠI <span>↗</span></button>
+         <div class="overlay-foot">KHÔNG CẦN ĐĂNG NHẬP <span>·</span> CHƠI MIỄN PHÍ</div>
+       </div>
+     </div>
+     <div class="toast" id="toast" aria-live="polite"></div>
+   </div>
+   <div class="game-toolbar"><div class="keys"><kbd>A</kbd><kbd>→</kbd><span>Gõ từ xuất hiện trên phi cơ</span></div><div class="toolbar-actions"><span><kbd>⌫</kbd> Sửa chữ</span><span><kbd>ESC</kbd> Tạm dừng</span><button id="restartBtn" type="button">↻ Chơi lại</button></div></div>
+   <div class="mobile-input-wrap"><label for="mobileInput">GÕ TỪ TẠI ĐÂY (ĐIỆN THOẠI / MÁY TÍNH BẢNG)</label><input id="mobileInput" type="text" autocomplete="off" autocorrect="off" autocapitalize="none" spellcheck="false" inputmode="text" placeholder="Gõ các chữ cái để bắn..." aria-label="Nhập từ để bắn mục tiêu"></div>
+ </div>
+ <aside class="sidebar" aria-label="Thông tin trò chơi">
+   <div class="side-section"><div class="side-eyebrow"><span>01</span> THÔNG SỐ</div><h3>Flight telemetry<span class="small-arrow">↗</span></h3>
+     <div class="telemetry"><div><span>ĐỘ CHÍNH XÁC</span><strong id="accuracy">100<small>%</small></strong><div class="meter"><i id="accuracyBar" style="width:100%"></i></div></div><div><span>TỐC ĐỘ GÕ</span><strong id="wpm">0<small> WPM</small></strong><div class="meter"><i id="wpmBar" style="width:0%"></i></div></div><div><span>SÓNG TẤN CÔNG</span><strong id="wave">01<small> / ∞</small></strong><div class="meter"><i id="waveBar" style="width:10%"></i></div></div></div>
+   </div>
+   <div class="side-section how-to"><div class="side-eyebrow"><span>02</span> HƯỚNG DẪN</div><h3>Cách chơi <span class="star">✳</span></h3>
+     <div class="step"><span class="step-number">01</span><div><strong>Nhìn và tìm từ</strong><p>Quan sát từ tiếng Anh trên các phi cơ đang bay tới.</p></div></div>
+     <div class="step"><span class="step-number">02</span><div><strong>Gõ để khóa mục tiêu</strong><p>Gõ từng ký tự. Mục tiêu gần phòng tuyến nhất được ưu tiên.</p></div></div>
+     <div class="step"><span class="step-number">03</span><div><strong>Giữ combo, lên điểm</strong><p>Gõ đúng liên tiếp sẽ tăng điểm thưởng. Đừng để phi cơ thoát!</p></div></div>
+   </div>
+   <div class="side-footer"><span class="pulse-icon">◉</span><div><strong>100% MIỄN PHÍ & NGOẠI TUYẾN</strong><span>Không tài khoản, không máy chủ, không theo dõi.</span></div></div>
+ </aside>
+</section>
+<div class="lower-strip"><span>ENGINE: HTML5 CANVAS / VANILLA JAVASCRIPT</span><span>MADE FOR QUICK FINGERS <b>✦</b></span></div>
+</main>
+<footer class="site-footer">SKYTYPE ATTACK <span>© 2026 · OPEN SOURCE</span><a href="https://github.com/trinhtanphat/sky-typing-attack">SOURCE CODE ↗</a></footer>
+</div>
+<script type="module" src="src/game.js"></script>
+</body>
+</html>
