@@ -15,7 +15,7 @@
 <div class="app-shell">
 <header class="site-header">
   <a class="brand" href="./" aria-label="SkyType Attack — trang chủ"><span class="brand-icon" aria-hidden="true">✦</span><span>SKY<span class="brand-accent">TYPE</span><small>ATTACK</small></span></a>
-  <div class="header-right"><span class="status-dot"></span><span class="online-label">ARCADE / BROWSER GAME</span><button id="soundBtn" class="icon-button" type="button" aria-pressed="true" title="Bật/tắt âm thanh">♫ <span>Âm thanh: Bật</span></button><a class="github-button" href="https://github.com/trinhtanphat/sky-typing-attack" target="_blank" rel="noopener noreferrer">GitHub ↗</a></div>
+  <div class="header-right"><span class="status-dot"></span><span class="online-label">ARCADE / BROWSER GAME</span><button id="soundBtn" class="icon-button" type="button" aria-pressed="true" title="Bật/tắt âm thanh">🔊 <span>Âm thanh: Bật</span></button><a class="github-button" href="https://github.com/trinhtanphat/sky-typing-attack" target="_blank" rel="noopener noreferrer">GitHub ↗</a></div>
 </header>
 <main>
 <section class="intro" aria-labelledby="heading">
@@ -51,21 +51,31 @@
      <div class="toast" id="toast" aria-live="polite"></div>
    </div>
    <div class="game-toolbar"><div class="keys"><kbd>A</kbd><kbd>→</kbd><span>Gõ từ xuất hiện trên phi cơ</span></div><div class="toolbar-actions"><span><kbd>⌫</kbd> Sửa chữ</span><span><kbd>ESC</kbd> Tạm dừng</span><button id="restartBtn" type="button">↻ Chơi lại</button></div></div>
+   <div class="audio-controls" aria-label="Tùy chỉnh âm thanh">
+    <span id="audioStatus" role="status">🔊 Nhấn Bắt đầu để kích hoạt tiếng game</span>
+    <div class="audio-settings"><label for="volumeRange">Âm lượng <strong id="volumeValue">70%</strong></label><input id="volumeRange" type="range" min="0" max="100" value="70" step="5" aria-label="Âm lượng tổng"><button type="button" id="musicBtn" aria-pressed="true">♫ Nhạc nền: Bật</button><button type="button" id="soundTestBtn">♪ Nghe thử</button></div>
+   </div>
    <div class="mobile-input-wrap"><label for="mobileInput">GÕ TỪ TẠI ĐÂY (ĐIỆN THOẠI / MÁY TÍNH BẢNG)</label><input id="mobileInput" type="text" autocomplete="off" autocorrect="off" autocapitalize="none" spellcheck="false" inputmode="text" placeholder="Gõ các chữ cái để bắn..." aria-label="Nhập từ để bắn mục tiêu"></div>
+   <section class="finger-trainer" aria-label="Bàn phím tô màu theo ngón tay">
+    <div class="trainer-heading"><div><div class="side-eyebrow"><span>⌨</span> HỌC GÕ 10 NGÓN</div><h3>Mỗi ngón tay, một màu.</h3></div><div class="next-key" aria-live="polite"><span>PHÍM TIẾP THEO</span><strong id="nextKey">—</strong><small id="nextFinger">Gõ chữ đầu tiên để khóa mục tiêu</small></div></div>
+    <div class="keyboard" id="keyboard" role="img" aria-label="Sơ đồ QWERTY phân màu theo tám nhóm ngón tay"></div>
+    <div class="finger-legend" id="fingerLegend"></div>
+    <div class="trainer-foot">✦ Màu chữ trên phi cơ trùng với màu ngón tay tương ứng. Sơ đồ dùng cách đặt ngón chuẩn QWERTY.</div>
+   </section>
  </div>
  <aside class="sidebar" aria-label="Thông tin trò chơi">
    <div class="side-section"><div class="side-eyebrow"><span>01</span> THÔNG SỐ</div><h3>Flight telemetry<span class="small-arrow">↗</span></h3>
      <div class="telemetry"><div><span>ĐỘ CHÍNH XÁC</span><strong id="accuracy">100<small>%</small></strong><div class="meter"><i id="accuracyBar" style="width:100%"></i></div></div><div><span>TỐC ĐỘ GÕ</span><strong id="wpm">0<small> WPM</small></strong><div class="meter"><i id="wpmBar" style="width:0%"></i></div></div><div><span>SÓNG TẤN CÔNG</span><strong id="wave">01<small> / ∞</small></strong><div class="meter"><i id="waveBar" style="width:10%"></i></div></div></div>
    </div>
    <div class="side-section how-to"><div class="side-eyebrow"><span>02</span> HƯỚNG DẪN</div><h3>Cách chơi <span class="star">✳</span></h3>
-     <div class="step"><span class="step-number">01</span><div><strong>Nhìn và tìm từ</strong><p>Quan sát từ tiếng Anh trên các phi cơ đang bay tới.</p></div></div>
-     <div class="step"><span class="step-number">02</span><div><strong>Gõ để khóa mục tiêu</strong><p>Gõ từng ký tự. Mục tiêu gần phòng tuyến nhất được ưu tiên.</p></div></div>
+     <div class="step"><span class="step-number">01</span><div><strong>Nhìn và tìm từ</strong><p>Mỗi chữ có màu riêng theo ngón tay. Nhìn bàn phím bên dưới để chọn ngón gõ.</p></div></div>
+     <div class="step"><span class="step-number">02</span><div><strong>Gõ để khóa mục tiêu</strong><p>Chữ tiếp theo sáng lên ở bàn phím. Ngón tay gợi ý thay đổi theo từng phím.</p></div></div>
      <div class="step"><span class="step-number">03</span><div><strong>Giữ combo, lên điểm</strong><p>Gõ đúng liên tiếp sẽ tăng điểm thưởng. Đừng để phi cơ thoát!</p></div></div>
    </div>
    <div class="side-footer"><span class="pulse-icon">◉</span><div><strong>100% MIỄN PHÍ & NGOẠI TUYẾN</strong><span>Không tài khoản, không máy chủ, không theo dõi.</span></div></div>
  </aside>
 </section>
-<div class="lower-strip"><span>ENGINE: HTML5 CANVAS / VANILLA JAVASCRIPT</span><span>MADE FOR QUICK FINGERS <b>✦</b></span></div>
+<div class="lower-strip"><span>ENGINE: HTML5 CANVAS / WEB AUDIO / VANILLA JAVASCRIPT</span><span>MADE FOR QUICK FINGERS <b>✦</b></span></div>
 </main>
 <footer class="site-footer">SKYTYPE ATTACK <span>© 2026 · OPEN SOURCE</span><a href="https://github.com/trinhtanphat/sky-typing-attack">SOURCE CODE ↗</a></footer>
 </div>
