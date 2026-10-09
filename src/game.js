@@ -1,30 +1,59 @@
 import { DIFFICULTIES, WORDS, accuracy, award, chooseTarget, difficultyFor, formatScore, nextSpawn, safeBest, validLetter, wpm } from "./engine.js";
+import { FINGERS, KEY_ROWS, colorFor, keyInfo } from "./fingers.js";
+import { ArcadeAudio } from "./audio.js";
 
 const W = 1100, H = 620, BEST_KEY = "skytype-attack-best-v1";
 const $ = (id) => document.getElementById(id);
 const canvas = $("gameCanvas"), ctx = canvas.getContext("2d", {alpha:false});
-const ui = Object.fromEntries(["score","combo","lives","accuracy","accuracyBar","wpm","wpmBar","wave","waveBar","overlay","overlayKicker","overlayTitle","overlayText","startBtn","difficulty","runState","pauseBtn","headerHighScore","toast","activeWord","wordProgress","soundBtn","mobileInput"].map(id=>[id,$(id)]));
+const ui = Object.fromEntries(["score","combo","lives","accuracy","accuracyBar","wpm","wpmBar","wave","waveBar","overlay","overlayKicker","overlayTitle","overlayText","startBtn","difficulty","runState","pauseBtn","headerHighScore","toast","activeWord","wordProgress","soundBtn","mobileInput","volumeRange","volumeValue","musicBtn","soundTestBtn","audioStatus","keyboard","fingerLegend","nextKey","nextFinger"].map(id=>[id,$(id)]));
 const random = (min,max) => min + Math.random()*(max-min);
 const clamp = (v,a,b) => Math.max(a,Math.min(b,v));
 const homeClouds = Array.from({length:13},(_,i)=>({x:(i*181+37)%1230,y:60+(i*73)%370,r:24+(i*13)%31,s:5+(i%4)*4}));
-let soundOn=true, audio=null, audioEnabled=false, best=0, phase="menu", level="normal";
+let best=0, phase="menu", level="normal", lastTypedKey="";
 let score=0, combo=0, lives=5, charsCorrect=0, keystrokes=0, elapsed=0, worldClock=0, wave=1, spawnClock=0, enemyId=0, shake=0, freezeFlash=0;
 let enemies=[], shots=[], particles=[], scorePopups=[], active=null, wordBuffer="", toastTimer=0, lastFrame=performance.now();
 let planeBob=0;
 try{best=safeBest(localStorage.getItem(BEST_KEY));}catch(e){best=0;}
 ui.headerHighScore.textContent=formatScore(best);
 
-function sfx(freq=440,duration=.07,type="sine",volume=.035){
- if(!soundOn)return;
- try{
-  if(!audio){audio=new (window.AudioContext||window.webkitAudioContext)();}
-  if(audio.state==="suspended"){audio.resume().catch(()=>{});}
-  const oscillator=audio.createOscillator(),gain=audio.createGain(),now=audio.currentTime;
-  oscillator.type=type;oscillator.frequency.setValueAtTime(freq,now);
-  oscillator.frequency.exponentialRampToValueAtTime(Math.max(60,freq*.68),now+duration);
-  gain.gain.setValueAtTime(volume,now);gain.gain.exponentialRampToValueAtTime(.0001,now+duration);
-  oscillator.connect(gain);gain.connect(audio.destination);oscillator.start(now);oscillator.stop(now+duration);
- }catch(e){/* Audio can be denied by browser, gameplay still works. */}
+const mixer = new ArcadeAudio({enabled:true,volume:.7,music:true,onStatus:updateAudioStatus});
+function updateAudioStatus(){
+ if(!ui.audioStatus)return;
+ ui.audioStatus.textContent=!mixer.enabled?"🔇 Đang tắt âm thanh":mixer.ready?"🔊 Âm thanh đã kích hoạt":"🔈 Bấm Bắt đầu hoặc Nghe thử để mở âm thanh";
+ ui.soundBtn.innerHTML=mixer.enabled?'🔊 <span>Âm thanh: Bật</span>':'🔇 <span>Âm thanh: Tắt</span>';
+ ui.soundBtn.setAttribute("aria-pressed",String(mixer.enabled));
+ ui.musicBtn.textContent=mixer.music?"♫ Nhạc nền: Bật":"♪ Nhạc nền: Tắt";
+ ui.musicBtn.setAttribute("aria-pressed",String(mixer.music));
+ ui.volumeValue.textContent=Math.round(mixer.volume*100)+"%";
+}
+function initFingerTrainer(){
+ for(const row of KEY_ROWS){
+  const line=document.createElement("div");line.className="key-row";
+  for(const letter of row){
+   const key=document.createElement("span");key.className="finger-key";key.dataset.key=letter;
+   key.style.setProperty("--finger",colorFor(letter));key.textContent=letter.toUpperCase();
+   key.title=letter.toUpperCase()+" — "+keyInfo(letter).finger;
+   line.append(key);
+  }
+  ui.keyboard.append(line);
+ }
+ for(const [id,finger] of Object.entries(FINGERS)){
+  const chip=document.createElement("div");chip.className="finger-chip";
+  chip.style.setProperty("--finger",finger.color);
+  const dot=document.createElement("span");dot.className="finger-dot";dot.setAttribute("aria-hidden","true");
+  const name=document.createElement("span");name.textContent=finger.name+" · "+finger.keys.toUpperCase();
+  chip.append(dot,name);ui.fingerLegend.append(chip);
+ }
+}
+function updateFingerTrainer(){
+ const info=active?keyInfo(active.word,wordBuffer.length):null;
+ ui.nextKey.textContent=info?.letter.toUpperCase()??"—";
+ ui.nextKey.style.color=info?.color??"#b3f7df";
+ ui.nextFinger.textContent=info?.finger??"Gõ chữ đầu tiên để khóa mục tiêu";
+ for(const el of ui.keyboard.querySelectorAll(".finger-key")){
+  el.classList.toggle("active",el.dataset.key===info?.letter);
+  el.classList.toggle("recent",el.dataset.key===lastTypedKey);
+ }
 }
 function toast(message){ui.toast.textContent=message;ui.toast.classList.add("show");clearTimeout(toastTimer);toastTimer=setTimeout(()=>ui.toast.classList.remove("show"),930);}
 function refresh(){
@@ -39,9 +68,15 @@ function refresh(){
  ui.wordProgress.classList.toggle("visible",Boolean(active));
  ui.activeWord.replaceChildren();
  if(active){
-  const yes=document.createElement("span");yes.className="typed-part";yes.textContent=wordBuffer;
-  ui.activeWord.append(yes,document.createTextNode(active.word.slice(wordBuffer.length)));
+  const letters=document.createElement("span");letters.className="letter-rainbow";
+  for(let i=0;i<active.word.length;i++){
+   const letter=document.createElement("span");letter.className="finger-char"+(i<wordBuffer.length?" done":i===wordBuffer.length?" next":"");
+   letter.style.color=colorFor(active.word[i]);letter.textContent=active.word[i];
+   letters.append(letter);
+  }
+  ui.activeWord.append(letters);
  }
+ updateFingerTrainer();
  ui.runState.textContent=phase==="playing"?"ĐANG CHIẾN ĐẤU":phase==="paused"?"TẠM DỪNG":phase==="over"?"KẾT THÚC":"SẴN SÀNG";
  ui.pauseBtn.textContent=phase==="paused"?"▶":"Ⅱ";
  ui.pauseBtn.setAttribute("aria-label",phase==="paused"?"Tiếp tục trò chơi":"Tạm dừng trò chơi");
@@ -73,27 +108,28 @@ function start(){
  level=ui.difficulty.value;
  score=0;combo=0;maxCombo=0;lives=difficultyFor(level).lives;
  charsCorrect=0;keystrokes=0;elapsed=0;wave=1;spawnClock=0;enemyId=0;shake=0;freezeFlash=0;downed=0;
- enemies=[];shots=[];particles=[];scorePopups=[];active=null;wordBuffer="";
+ enemies=[];shots=[];particles=[];scorePopups=[];active=null;wordBuffer="";lastTypedKey="";
  phase="playing";ui.overlay.classList.add("hidden");ui.toast.classList.remove("show");
  spawnEnemy();enemies[0].x=W-145;spawnClock=-.15;refresh();
+ mixer.setPlaying(true);mixer.unlock().then(ok=>{if(ok&&phase==="playing")mixer.effect("start");});
  canvas.parentElement.focus({preventScroll:true});
  if(window.matchMedia("(pointer:coarse)").matches) ui.mobileInput.focus({preventScroll:true});
- sfx(660,.13,"triangle",.04);
+
 }
 function pauseToggle(){
- if(phase==="playing"){phase="paused";showOverlay("paused");refresh();}
- else if(phase==="paused"){phase="playing";ui.overlay.classList.add("hidden");lastFrame=performance.now();refresh();}
+ if(phase==="playing"){phase="paused";mixer.setPlaying(false);showOverlay("paused");refresh();}
+ else if(phase==="paused"){phase="playing";mixer.setPlaying(true);ui.overlay.classList.add("hidden");lastFrame=performance.now();refresh();}
 }
 function gameOver(){
- phase="over";active=null;wordBuffer="";
+ phase="over";mixer.setPlaying(false);active=null;wordBuffer="";
  if(score>best){best=score;try{localStorage.setItem(BEST_KEY,String(best));}catch(e){/* optional */}}
  ui.headerHighScore.textContent=formatScore(best);
- showOverlay("over");refresh();sfx(220,.48,"sawtooth",.04);
+ showOverlay("over");refresh();mixer.effect("end");
 }
 function lostEnemy(e){
  if(!e.alive)return;
  e.alive=false; if(active===e){active=null;wordBuffer="";}
- lives--;combo=0;shake=9;freezeFlash=.35;burst(100,e.y,"#f4aa74",20);sfx(180,.21,"sawtooth",.046);
+ lives--;combo=0;shake=9;freezeFlash=.35;burst(100,e.y,"#f4aa74",20);mixer.effect("danger");
  toast(lives>0?"PHÒNG TUYẾN BỊ XÂM NHẬP!":"HẾT MẠNG!");
  refresh();
  if(lives<=0)gameOver();
@@ -126,7 +162,7 @@ function destroy(e){
  scorePopups.push({x:e.x,y:e.y-57,text:"+"+points,life:.95});
  if(combo>=3&&combo%3===0)toast("COMBO ×"+combo+"!");
  else if(e.word.length>=8)toast("PERFECT SHOT!");
- sfx(540+Math.min(450,combo*23),.13,"triangle",.053);
+ mixer.effect(combo>1?"combo":"kill");
  active=null;wordBuffer="";refresh();
 }
 function fire(e){
@@ -135,16 +171,16 @@ function fire(e){
 }
 function typeLetter(key){
  if(phase!=="playing"||!validLetter(key))return;
- const letter=key.toLowerCase();keystrokes++;
+ const letter=key.toLowerCase();keystrokes++;lastTypedKey=letter;
  if(!active){
   active=chooseTarget(enemies,letter);
   wordBuffer="";
  }
  if(active && active.alive && active.word[wordBuffer.length]===letter){
-  wordBuffer+=letter;charsCorrect++;fire(active);sfx(460+wordBuffer.length*45,.053,"sine",.018);
+  wordBuffer+=letter;charsCorrect++;fire(active);mixer.effect("shot");
   if(wordBuffer===active.word)destroy(active);
  }else{
-  combo=0;shake=2.5; sfx(170,.055,"square",.011);
+  combo=0;shake=2.5;mixer.effect("miss");
  }
  refresh();
 }
@@ -164,8 +200,8 @@ function update(dt){
  for(let i=scorePopups.length-1;i>=0;i--){const p=scorePopups[i];p.y-=24*dt;p.life-=dt;if(p.life<=0)scorePopups.splice(i,1);}
  shake=Math.max(0,shake-25*dt);freezeFlash=Math.max(0,freezeFlash-dt);
  if(phase!=="playing")return;
- elapsed+=dt;const newWave=1+Math.floor(elapsed/22);
- if(newWave!==wave){wave=newWave;toast("SÓNG "+wave+" ĐANG TỚI!");sfx(700,.21,"triangle",.04);}
+ elapsed+=dt;mixer.tick();const newWave=1+Math.floor(elapsed/22);
+ if(newWave!==wave){wave=newWave;toast("SÓNG "+wave+" ĐANG TỚI!");mixer.effect("wave");}
  spawnClock+=dt;
  if(spawnClock>=nextSpawn(difficultyFor(level).spawn,wave)&&enemies.filter(e=>e.alive).length<13){spawnClock=0;spawnEnemy();}
  for(const e of enemies){
@@ -256,15 +292,21 @@ function drawWord(e){
  ctx.font="900 "+fontSize+"px ui-sans-serif,system-ui";ctx.textBaseline="middle";ctx.textAlign="center";
  ctx.fillStyle="#ecf8ee";
  ctx.shadowColor="#174c69";ctx.shadowBlur=3;
- if(active===e){
-  const done=wordBuffer.length,spacing=15.2;
-  const left=e.x-(word.length*spacing)/2;
-  for(let i=0;i<word.length;i++){
-   ctx.fillStyle=i<done?"#a1fabe":"#fff7e5";
-   ctx.fillText(word[i],left+i*spacing+spacing/2,y+21);
+ const done=active===e?wordBuffer.length:0,spacing=15.2;
+ const left=e.x-(word.length*spacing)/2;
+ for(let i=0;i<word.length;i++){
+  ctx.fillStyle=colorFor(word[i]);ctx.lineWidth=3.3;
+  ctx.strokeStyle="rgba(12,42,62,.92)";
+  ctx.strokeText(word[i],left+i*spacing+spacing/2,y+21);
+  ctx.fillText(word[i],left+i*spacing+spacing/2,y+21);
+  if(i<done){
+   ctx.beginPath();ctx.strokeStyle="#b9ffd9";ctx.lineWidth=2;
+   const xx=left+i*spacing+spacing/2;
+   ctx.moveTo(xx-6,y+34);ctx.lineTo(xx+6,y+34);ctx.stroke();
+  }else if(i===done&&active===e){
+   ctx.strokeStyle="#fff8b7";ctx.lineWidth=1.5;
+   ctx.strokeRect(left+i*spacing-1,y+5,spacing+2,31);
   }
- }else{
-  ctx.fillText(word,e.x,y+21);
  }
  ctx.restore();
 }
@@ -327,13 +369,28 @@ ui.startBtn.addEventListener("click",()=>phase==="paused"?pauseToggle():start())
 $("restartBtn").addEventListener("click",start);
 ui.pauseBtn.addEventListener("click",pauseToggle);
 ui.soundBtn.addEventListener("click",()=>{
- soundOn=!soundOn;ui.soundBtn.setAttribute("aria-pressed",String(soundOn));
- ui.soundBtn.innerHTML=soundOn?"♫ <span>Âm thanh: Bật</span>":"♪ <span>Âm thanh: Tắt</span>";
- if(soundOn)sfx(610,.08,"triangle",.026);
+ mixer.setEnabled(!mixer.enabled);
+ if(mixer.enabled){mixer.setPlaying(phase==="playing");mixer.unlock().then(ok=>{if(ok)mixer.effect("start");});}
+ updateAudioStatus();
+});
+ui.musicBtn.addEventListener("click",()=>{
+ mixer.setMusic(!mixer.music);updateAudioStatus();
+ if(mixer.music)mixer.unlock().then(ok=>{if(ok)mixer.effect("combo");});
+});
+ui.soundTestBtn.addEventListener("click",async()=>{
+ if(!mixer.enabled)mixer.setEnabled(true);
+ const ok=await mixer.unlock();
+ if(ok){mixer.effect("shot");mixer.effect("kill");}
+ updateAudioStatus();
+});
+ui.volumeRange.addEventListener("input",()=>{
+ mixer.setVolume(Number(ui.volumeRange.value)/100);
+ updateAudioStatus();
+ if(mixer.enabled)mixer.unlock().then(ok=>{if(ok)mixer.effect("hit");});
 });
 document.addEventListener("visibilitychange",()=>{if(document.hidden&&phase==="playing")pauseToggle();});
 window.addEventListener("resize",resizeCanvas,{passive:true});
-window.addEventListener("pointerdown",()=>{if(!audioEnabled){audioEnabled=true;if(soundOn)sfx(380,.04,"sine",.002);}}, {once:true});
-refresh();showOverlay("menu");resizeCanvas();if("ResizeObserver" in window)new ResizeObserver(resizeCanvas).observe(canvas);requestAnimationFrame(frame);
+
+initFingerTrainer();updateAudioStatus();refresh();showOverlay("menu");resizeCanvas();if("ResizeObserver" in window)new ResizeObserver(resizeCanvas).observe(canvas);requestAnimationFrame(frame);
 if("serviceWorker" in navigator){window.addEventListener("load",()=>navigator.serviceWorker.register("./sw.js").catch(()=>{}));}
-window.__skytypeDebug={get state(){return {phase,score,combo,lives,wave,elapsed,enemies:enemies.map(e=>({word:e.word,x:e.x,y:e.y})),wordBuffer};},start,typeLetter,pauseToggle};
+window.__skytypeDebug={get state(){return {phase,score,combo,lives,wave,elapsed,enemies:enemies.map(e=>({word:e.word,x:e.x,y:e.y})),wordBuffer};},get audio(){return {state:mixer.state,ready:mixer.ready,enabled:mixer.enabled,music:mixer.music,volume:mixer.volume,playing:mixer.playing};},start,typeLetter,pauseToggle};

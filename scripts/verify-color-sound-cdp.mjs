@@ -1,0 +1,40 @@
+import assert from "node:assert/strict";
+const port=process.env.CDP_PORT||"9352";
+const tabs=await(await fetch("http://127.0.0.1:"+port+"/json/list")).json();
+const page=tabs.find(x=>x.type==="page"&&x.url.includes("8763"));
+assert.ok(page,"Local game tab not found");
+const ws=new WebSocket(page.webSocketDebuggerUrl);
+await new Promise((res,rej)=>{ws.addEventListener("open",res,{once:true});ws.addEventListener("error",rej,{once:true});});
+const jobs=new Map(),errors=[];let seq=0;
+ws.addEventListener("message",event=>{const m=JSON.parse(event.data);if(m.method==="Runtime.exceptionThrown")errors.push(m.params.exceptionDetails?.text);
+ if(m.id&&jobs.has(m.id)){const [resolve,reject]=jobs.get(m.id);jobs.delete(m.id);m.error?reject(Error(JSON.stringify(m.error))):resolve(m.result);}});
+function call(method,params={}){return new Promise((resolve,reject)=>{let id=++seq;jobs.set(id,[resolve,reject]);ws.send(JSON.stringify({id,method,params}));});}
+async function js(expression){const r=await call("Runtime.evaluate",{expression,returnByValue:true,awaitPromise:true});if(r.exceptionDetails)throw Error(r.exceptionDetails.exception?.description||r.exceptionDetails.text);return r.result.value;}
+await call("Runtime.enable");
+await call("Emulation.clearDeviceMetricsOverride");
+await call("Page.reload",{ignoreCache:true});
+let ready=false;
+for(let n=0;n<60;n++){if(await js('!!window.__skytypeDebug')){ready=true;break;}await new Promise(r=>setTimeout(r,90));}
+assert.ok(ready,"Game loaded");
+const keyboard=await js(`(()=>({keys:document.querySelectorAll('.finger-key').length,chips:document.querySelectorAll('.finger-chip').length,q:document.querySelector('.finger-key[data-key="q"]').style.getPropertyValue("--finger"),p:document.querySelector('.finger-key[data-key="p"]').style.getPropertyValue("--finger")}))()`);
+assert.equal(keyboard.keys,26);assert.equal(keyboard.chips,8);assert.notEqual(keyboard.q,keyboard.p);
+console.log("PASS: 26 colored keys, 8 finger legends",JSON.stringify(keyboard));
+const hit=await js(`(()=>{const r=document.querySelector('#startBtn').getBoundingClientRect();return {x:r.x+r.width/2,y:r.y+r.height/2}})()`);
+await call("Input.dispatchMouseEvent",{type:"mouseMoved",x:hit.x,y:hit.y,button:"none"});
+await call("Input.dispatchMouseEvent",{type:"mousePressed",x:hit.x,y:hit.y,button:"left",clickCount:1});
+await call("Input.dispatchMouseEvent",{type:"mouseReleased",x:hit.x,y:hit.y,button:"left",clickCount:1});
+await new Promise(r=>setTimeout(r,500));
+const audio=await js('window.__skytypeDebug.audio');
+console.log("AudioContext after real pointer click: ",JSON.stringify(audio));
+assert.equal(audio.ready,true,"AudioContext must be running after trusted start click");
+assert.equal(audio.playing,true);
+const highlighted=await js(`(()=>{const word=window.__skytypeDebug.state.enemies[0].word;document.dispatchEvent(new KeyboardEvent("keydown",{key:word[0],bubbles:true,cancelable:true})); const expected=word[1].toUpperCase();return {word,expected,next:document.querySelector("#nextKey").textContent,active:document.querySelectorAll(".finger-key.active").length,progress:[...document.querySelectorAll("#activeWord .finger-char")].map(el=>el.style.color),keyColor:document.querySelector(".finger-key.active")?.style.getPropertyValue("--finger")}})()`);
+assert.equal(highlighted.next,highlighted.expected);
+assert.equal(highlighted.active,1);
+assert.ok(highlighted.progress.length>1);
+console.log("PASS: colored letters and live next-finger highlight",JSON.stringify(highlighted));
+const mixerResult=await js(`(()=>{const slider=document.querySelector("#volumeRange");slider.value="35";slider.dispatchEvent(new Event("input",{bubbles:true}));document.querySelector("#musicBtn").click();return {volume:window.__skytypeDebug.audio.volume,music:window.__skytypeDebug.audio.music,button:document.querySelector("#musicBtn").textContent}})()`);
+assert.equal(mixerResult.volume,.35);assert.equal(mixerResult.music,false);
+console.log("PASS: volume slider and background music switch",JSON.stringify(mixerResult));
+assert.deepEqual(errors,[]);
+ws.close();console.log("PASS: 0 uncaught errors");

@@ -16,7 +16,9 @@ A lightweight, responsive browser typing-defense game inspired by retro sky arca
 - Score, accuracy, words per minute, and local high score.
 - Pause with **Esc**, delete a character with **Backspace**, replay anytime.
 - Includes a mobile input field for touch keyboards.
-- Self-contained vector art, background parallax, synthesized sound, zero trackers, no external image or font dependencies.
+- Self-contained vector art, background parallax, **Web Audio synthesizer** (audible shots/hits/combos/danger sounds and melodic BGM), adjustable volume, separate BGM toggle, and a sound-check button. Audio begins only after a real user gesture, as required by browsers.
+- **Finger-color training mode:** color-coded individual letters on enemy labels and word progress; 26-key on-screen QWERTY visualization, eight finger color categories and live next-key highlighting; standard touch-typing zones.
+- Zero trackers and no external image, font or audio dependencies.
 - Progressive Web App cache after first online visit.
 
 ## Run locally
@@ -36,7 +38,7 @@ node --test tests/*.test.mjs
 
 The tests use Node built-in test runner and test pure scoring, word targeting, validation and pacing logic.
 
-Optional browser QA: serve the game on port 8763, start Chrome with a DevTools remote debugging port 9351 and run `node scripts/smoke-cdp.mjs`. This also captures `preview.png` and tests keyboard play, pause/resume, mobile viewport and uncaught exceptions.
+Optional browser QA: serve the game on port 8763, start Chrome with a DevTools remote debugging port 9351 (or set `CDP_PORT`) and run `node scripts/smoke-cdp.mjs`. This also captures `preview.png` and tests keyboard play, pause/resume, mobile viewport and uncaught exceptions. Then run `node scripts/verify-color-sound-cdp.mjs` to exercise real pointer-triggered AudioContext activation, live color highlights, volume and BGM controls.
 
 ## Host on GitHub Pages
 Repository Settings → Pages → **Deploy from a branch** → `main` → `/(root)`. The deployment is static and also works with the repository subpath. This repository has no GitHub Actions workflow.
@@ -46,6 +48,8 @@ Repository Settings → Pages → **Deploy from a branch** → `main` → `/(roo
 - `styles.css` — interface styling
 - `src/game.js` — canvas rendering, input handling, game loop, audio and persistence
 - `src/engine.js` — pure rules and vocabulary
+- `src/fingers.js` — QWERTY finger layout and color mapping
+- `src/audio.js` — browser-unlocked Web Audio mixer and synthesized music/SFX
 - `tests/` — deterministic unit tests
 - `sw.js` and `manifest.webmanifest` — offline app caching
 
