@@ -14,11 +14,15 @@ await call("Runtime.enable");
 await call("Emulation.clearDeviceMetricsOverride");
 await call("Page.reload",{ignoreCache:true});
 let ready=false;
-for(let n=0;n<60;n++){if(await js('!!window.__skytypeDebug')){ready=true;break;}await new Promise(r=>setTimeout(r,90));}
+for(let n=0;n<100;n++){if(await js('!!window.__skytypeDebug')){ready=true;break;}await new Promise(r=>setTimeout(r,90));}
 assert.ok(ready,"Game loaded");
 const keyboard=await js(`(()=>({keys:document.querySelectorAll('.finger-key').length,chips:document.querySelectorAll('.finger-chip').length,q:document.querySelector('.finger-key[data-key="q"]').style.getPropertyValue("--finger"),p:document.querySelector('.finger-key[data-key="p"]').style.getPropertyValue("--finger")}))()`);
 assert.equal(keyboard.keys,26);assert.equal(keyboard.chips,8);assert.notEqual(keyboard.q,keyboard.p);
 console.log("PASS: 26 colored keys, 8 finger legends",JSON.stringify(keyboard));
+const sample=await js(`[...document.querySelectorAll("#colorSample [data-letter]")].map(el=>getComputedStyle(el).backgroundColor)`);
+assert.equal(sample.length,3);
+assert.equal(new Set(sample).size,3,"Menu must show three visibly different finger colors");
+console.log("PASS: distinct bright finger-color sample on the start menu",JSON.stringify(sample));
 const hit=await js(`(()=>{const r=document.querySelector('#startBtn').getBoundingClientRect();return {x:r.x+r.width/2,y:r.y+r.height/2}})()`);
 await call("Input.dispatchMouseEvent",{type:"mouseMoved",x:hit.x,y:hit.y,button:"none"});
 await call("Input.dispatchMouseEvent",{type:"mousePressed",x:hit.x,y:hit.y,button:"left",clickCount:1});

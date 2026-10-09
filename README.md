@@ -6,6 +6,12 @@ A lightweight, responsive browser typing-defense game inspired by retro sky arca
 
 ![SkyType Attack — gameplay](preview.png)
 
+## Version 1.2.1 — high-contrast finger letters
+
+Every aircraft word uses **solid, brightly colored keycap tiles** (not barely tinted text). The main menu previews `s k y` in three finger colors so you can confirm the new version immediately. Letter colors match the QWERTY guide.
+
+If a previously installed offline version is still showing pale labels, open the cache-busting URL: **[Open color edition V3](https://trinhtanphat.github.io/sky-typing-attack/?v=3)**. The refreshed service worker uses network-first caching.
+
 ## Gameplay
 - English words float above incoming aircraft.
 - Type a word to lock on, keep typing to shoot it down.

@@ -40,3 +40,10 @@
  .finger-legend{grid-template-columns:repeat(2,minmax(0,1fr));gap:6px}.finger-chip{font-size:9px}
  .word-progress .letter-rainbow .finger-char{min-width:7px}
 }
+
+/* High-contrast finger color preview in the opening menu. */
+.color-sample{margin:6px auto 9px;display:flex;align-items:center;justify-content:center;gap:13px;flex-wrap:wrap}
+.sample-caption{color:#b4f2eb;font-weight:900;font-size:9px;letter-spacing:1.35px}
+.color-sample-letters{display:flex;gap:6px}
+.color-sample-letters span{width:29px;height:32px;border-radius:6px;display:grid;place-items:center;font-size:22px;line-height:1;font-weight:950;box-shadow:0 3px 0 #152736,0 0 12px #9af5ea33}
+@media(max-width:600px){.color-sample{gap:7px;margin:3px auto}.sample-caption{font-size:7px;letter-spacing:.6px}.color-sample-letters span{width:24px;height:25px;font-size:18px}}

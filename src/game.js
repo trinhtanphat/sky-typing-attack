@@ -27,6 +27,10 @@ function updateAudioStatus(){
  ui.volumeValue.textContent=Math.round(mixer.volume*100)+"%";
 }
 function initFingerTrainer(){
+ for(const letter of document.querySelectorAll("#colorSample [data-letter]")){
+  letter.style.backgroundColor=colorFor(letter.dataset.letter);
+  letter.style.color="#10263c";
+ }
  for(const row of KEY_ROWS){
   const line=document.createElement("div");line.className="key-row";
   for(const letter of row){
@@ -281,31 +285,29 @@ function drawPlane(x,y,scale,color,bob=0,isPlayer=false){
  ctx.restore();
 }
 function drawWord(e){
- const fontSize=23,word=e.word,pad=18,labelW=word.length*15.2+pad*2,top=e.y-63-labelW*0;
- const x=e.x-labelW/2,y=top-17;
+ const word=e.word,step=30,tileWidth=27,padding=11,labelW=word.length*step+padding*2;
+ const x=e.x-labelW/2,y=e.y-95,done=active===e?wordBuffer.length:0;
  ctx.save();
- ctx.shadowColor=active===e?"#f5edb0":"rgba(22,69,91,.3)";ctx.shadowBlur=active===e?18:8;
- ctx.lineWidth=active===e?2.7:1.5;
- roundRect(x,y,labelW,43,9,active===e?"rgba(24,73,84,.94)":"rgba(31,87,100,.78)",active===e?"#fbef9c":"rgba(234,255,243,.72)");
+ ctx.shadowColor=active===e?"rgba(255,246,183,.85)":"rgba(13,32,54,.7)";
+ ctx.shadowBlur=active===e?22:12;
+ ctx.lineWidth=active===e?3:2;
+ roundRect(x,y,labelW,57,10,"rgba(10,31,52,.97)",active===e?"#fff0a2":"#d0f7fa");
  ctx.shadowBlur=0;
- if(active===e){ctx.beginPath();ctx.moveTo(e.x,y+43);ctx.lineTo(e.x,e.y-22);ctx.strokeStyle="#fff1aeaa";ctx.setLineDash([4,5]);ctx.stroke();ctx.setLineDash([]);}
- ctx.font="900 "+fontSize+"px ui-sans-serif,system-ui";ctx.textBaseline="middle";ctx.textAlign="center";
- ctx.fillStyle="#ecf8ee";
- ctx.shadowColor="#174c69";ctx.shadowBlur=3;
- const done=active===e?wordBuffer.length:0,spacing=15.2;
- const left=e.x-(word.length*spacing)/2;
+ if(active===e){
+  ctx.beginPath();ctx.moveTo(e.x,y+57);ctx.lineTo(e.x,e.y-23);
+  ctx.strokeStyle="#fff0a2";ctx.setLineDash([5,4]);ctx.lineWidth=2;ctx.stroke();ctx.setLineDash([]);
+ }
+ ctx.font="900 26px ui-sans-serif,system-ui";ctx.textBaseline="middle";ctx.textAlign="center";
  for(let i=0;i<word.length;i++){
-  ctx.fillStyle=colorFor(word[i]);ctx.lineWidth=3.3;
-  ctx.strokeStyle="rgba(12,42,62,.92)";
-  ctx.strokeText(word[i],left+i*spacing+spacing/2,y+21);
-  ctx.fillText(word[i],left+i*spacing+spacing/2,y+21);
+  const letter=word[i],color=colorFor(letter),tx=x+padding+i*step,ty=y+9;
+  ctx.shadowColor=color;ctx.shadowBlur=(active===e&&i===done)?18:5;
+  roundRect(tx,ty,tileWidth,36,5,color,null);
+  ctx.shadowBlur=0;
+  ctx.fillStyle="#13243a";ctx.fillText(letter,tx+tileWidth/2,ty+18);
   if(i<done){
-   ctx.beginPath();ctx.strokeStyle="#b9ffd9";ctx.lineWidth=2;
-   const xx=left+i*spacing+spacing/2;
-   ctx.moveTo(xx-6,y+34);ctx.lineTo(xx+6,y+34);ctx.stroke();
-  }else if(i===done&&active===e){
-   ctx.strokeStyle="#fff8b7";ctx.lineWidth=1.5;
-   ctx.strokeRect(left+i*spacing-1,y+5,spacing+2,31);
+   ctx.fillStyle="#c8ffe2";ctx.fillRect(tx+6,ty+38,tileWidth-12,3);
+  }else if(active===e&&i===done){
+   ctx.lineWidth=2.6;ctx.strokeStyle="#ffffff";ctx.strokeRect(tx-2,ty-2,tileWidth+4,40);
   }
  }
  ctx.restore();

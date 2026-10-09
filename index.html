@@ -8,7 +8,7 @@
 <title>SkyType Attack — Đánh máy, bảo vệ bầu trời</title>
 <link rel="icon" href="favicon.svg" type="image/svg+xml">
 <link rel="manifest" href="manifest.webmanifest">
-<link rel="stylesheet" href="styles.css">
+<link rel="stylesheet" href="styles.css?v=3">
 </head>
 <body>
 <div class="page-glow" aria-hidden="true"></div>
@@ -40,12 +40,13 @@
        <div class="overlay-vignette"></div>
        <div class="overlay-card">
          <div class="overlay-symbol">✦ <span>✈</span> ✦</div>
+         <div class="color-sample" id="colorSample" aria-label="Ví dụ chữ cái mang màu theo ngón tay"><span class="sample-caption">MÀU CHỮ THEO NGÓN TAY</span><div class="color-sample-letters"><span data-letter="s">s</span><span data-letter="k">k</span><span data-letter="y">y</span></div></div>
          <div class="overlay-kicker" id="overlayKicker">SẴN SÀNG CẤT CÁNH?</div>
          <h2 id="overlayTitle">Bầu trời đang chờ bạn.</h2>
          <p id="overlayText">Gõ chữ cái trên bàn phím để khóa và phá hủy phi cơ địch trước khi chúng lọt qua phòng tuyến.</p>
          <div class="difficulty-row"><label for="difficulty">CẤP ĐỘ</label><select id="difficulty"><option value="easy">Tân binh · Dễ</option><option value="normal" selected>Phi công · Vừa</option><option value="hard">Át chủ bài · Khó</option></select></div>
          <button id="startBtn" type="button" class="start-button">BẮT ĐẦU CHƠI <span>↗</span></button>
-         <div class="overlay-foot">KHÔNG CẦN ĐĂNG NHẬP <span>·</span> CHƠI MIỄN PHÍ</div>
+         <div class="overlay-foot">CHỮ CÁI TÔ MÀU THEO NGÓN TAY <span>·</span> V3</div>
        </div>
      </div>
      <div class="toast" id="toast" aria-live="polite"></div>
@@ -75,10 +76,10 @@
    <div class="side-footer"><span class="pulse-icon">◉</span><div><strong>100% MIỄN PHÍ & NGOẠI TUYẾN</strong><span>Không tài khoản, không máy chủ, không theo dõi.</span></div></div>
  </aside>
 </section>
-<div class="lower-strip"><span>ENGINE: HTML5 CANVAS / WEB AUDIO / VANILLA JAVASCRIPT</span><span>MADE FOR QUICK FINGERS <b>✦</b></span></div>
+<div class="lower-strip"><span>ENGINE: HTML5 CANVAS / WEB AUDIO / COLOR KEYS V3</span><span>MADE FOR QUICK FINGERS <b>✦</b></span></div>
 </main>
 <footer class="site-footer">SKYTYPE ATTACK <span>© 2026 · OPEN SOURCE</span><a href="https://github.com/trinhtanphat/sky-typing-attack">SOURCE CODE ↗</a></footer>
 </div>
-<script type="module" src="src/game.js"></script>
+<script type="module" src="src/game.js?v=3"></script>
 </body>
 </html>
