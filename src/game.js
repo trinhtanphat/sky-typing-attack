@@ -75,7 +75,7 @@ function start(){
  charsCorrect=0;keystrokes=0;elapsed=0;wave=1;spawnClock=0;enemyId=0;shake=0;freezeFlash=0;downed=0;
  enemies=[];shots=[];particles=[];scorePopups=[];active=null;wordBuffer="";
  phase="playing";ui.overlay.classList.add("hidden");ui.toast.classList.remove("show");
- spawnEnemy();spawnClock=-.15;refresh();
+ spawnEnemy();enemies[0].x=W-145;spawnClock=-.15;refresh();
  canvas.parentElement.focus({preventScroll:true});
  if(window.matchMedia("(pointer:coarse)").matches) ui.mobileInput.focus({preventScroll:true});
  sfx(660,.13,"triangle",.04);
@@ -306,7 +306,7 @@ function resizeCanvas(){
 }
 function frame(now){
  const dt=clamp((now-lastFrame)/1000,0,.055);lastFrame=now;
- resizeCanvas();update(dt);paint();
+ update(dt);paint();
  if(phase==="playing"&&Math.floor(now/220)!==Math.floor((now-dt*1000)/220))refresh();
  requestAnimationFrame(frame);
 }
@@ -334,6 +334,6 @@ ui.soundBtn.addEventListener("click",()=>{
 document.addEventListener("visibilitychange",()=>{if(document.hidden&&phase==="playing")pauseToggle();});
 window.addEventListener("resize",resizeCanvas,{passive:true});
 window.addEventListener("pointerdown",()=>{if(!audioEnabled){audioEnabled=true;if(soundOn)sfx(380,.04,"sine",.002);}}, {once:true});
-refresh();showOverlay("menu");requestAnimationFrame(frame);
+refresh();showOverlay("menu");resizeCanvas();if("ResizeObserver" in window)new ResizeObserver(resizeCanvas).observe(canvas);requestAnimationFrame(frame);
 if("serviceWorker" in navigator){window.addEventListener("load",()=>navigator.serviceWorker.register("./sw.js").catch(()=>{}));}
 window.__skytypeDebug={get state(){return {phase,score,combo,lives,wave,elapsed,enemies:enemies.map(e=>({word:e.word,x:e.x,y:e.y})),wordBuffer};},start,typeLetter,pauseToggle};
